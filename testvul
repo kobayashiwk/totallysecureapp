@@ -1,3 +1,4 @@
+/*
 package org.t246osslab.easybuggy4sb.vulnerabilities;
 
 import java.util.Locale;
@@ -50,3 +51,4 @@ public class CodeInjectionController extends AbstractController {
         }
     }
 }
+*/
