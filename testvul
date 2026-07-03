@@ -30,7 +30,7 @@ public class CodeInjectionController extends AbstractController {
 	}
 
     private void parseJson(String jsonString, ModelAndView mav, Locale locale) {
-        /* Remove spaces and line breaks to parse as JSON */
+        /* aRemove spaces and line breaks to parse as JSON */
         String convertedJsonString = jsonString.replaceAll(" ", "");
         convertedJsonString = convertedJsonString.replaceAll("\r\n", "");
         convertedJsonString = convertedJsonString.replaceAll("\n", "");
