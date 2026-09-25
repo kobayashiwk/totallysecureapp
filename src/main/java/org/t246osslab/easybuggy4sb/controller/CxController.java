@@ -1,5 +1,6 @@
 package org.t246osslab.easybuggy4sb.controller;
 
+import org.owasp.esapi.ESAPI;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
@@ -37,7 +38,10 @@ public class CxController {
     public String runCommand(@PathVariable String cmd) throws IOException {
         byte[] buf = new byte[1024];
         int len = Runtime.getRuntime().exec(cmd).getInputStream().read(buf);
-        return new String(buf, 0, len);
+        // HTML-encode the command output to prevent Stored XSS (CWE-79).
+        // Untrusted data read from a data-store may contain HTML/JS; encoding
+        // it with ESAPI ensures it is rendered as text rather than markup.
+        return ESAPI.encoder().encodeForHTML(new String(buf, 0, len));
     }
 
     @GetMapping("legacy/add")
