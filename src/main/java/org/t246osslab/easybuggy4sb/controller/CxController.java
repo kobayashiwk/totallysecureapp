@@ -1,15 +1,25 @@
 package org.t246osslab.easybuggy4sb.controller;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import springfox.documentation.annotations.ApiIgnore;
 
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 @RestController
 public class CxController {
+
+    // Allowlist of commands that may be executed via this endpoint.
+    // Only exact command names (no arguments, no path components) are permitted.
+    private static final List<String> ALLOWED_COMMANDS = Collections.unmodifiableList(
+            Arrays.asList("whoami", "hostname", "date", "uptime"));
 
     @GetMapping("v2/authed/getTime") // require auth
     public String getTime() {
@@ -33,10 +43,24 @@ public class CxController {
     }
 
     // curl localhost:8080/legacy/runCommand/whoami
+    // Fixed: uses an allowlist and ProcessBuilder with an argv list (no shell expansion)
+    // to prevent command injection (CWE-77).
     @PostMapping("legacy/runCommand/{cmd}")
     public String runCommand(@PathVariable String cmd) throws IOException {
+        // Validate against the allowlist before executing
+        if (!ALLOWED_COMMANDS.contains(cmd)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Command not permitted");
+        }
+        // Use ProcessBuilder with an argv list — no shell is invoked, so shell metacharacters
+        // cannot be injected. The command is passed directly to execve().
+        ProcessBuilder pb = new ProcessBuilder(cmd);
+        pb.redirectErrorStream(true);
+        Process process = pb.start();
         byte[] buf = new byte[1024];
-        int len = Runtime.getRuntime().exec(cmd).getInputStream().read(buf);
+        int len = process.getInputStream().read(buf);
+        if (len <= 0) {
+            return "";
+        }
         return new String(buf, 0, len);
     }
 
